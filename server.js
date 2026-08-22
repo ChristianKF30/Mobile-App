@@ -18,8 +18,8 @@ app.use(express.json());
 // Serve the frontend (index.html) from the public folder
 app.use(express.static(path.join(__dirname, 'public')));
 
-// --- HELPER: Fetch movie/series title from OMDB ---
-async function getImdbTitle(imdbUrl) {
+// --- HELPER: Fetch movie/series details (title & rating) from OMDB ---
+async function getImdbDetails(imdbUrl) {
     const match = imdbUrl.match(/tt\d+/);
     if (!match) return null;
     const imdbId = match[0];
@@ -34,7 +34,11 @@ async function getImdbTitle(imdbUrl) {
     }
     const data = await res.json();
     if (data.Response === 'True') {
-        return data.Title;
+        return {
+            title: data.Title,
+            rating: (data.imdbRating && data.imdbRating !== 'N/A') ? data.imdbRating : null,
+            year: data.Year || null
+        };
     }
     return null;
 }
@@ -98,25 +102,25 @@ app.get('/api/wishes', async (req, res) => {
     }
 });
 
-// 6. Add a wish (fetches title from OMDB using the URL)
+// 6. Add a wish (fetches title & rating from OMDB using the URL)
 app.post('/api/wishes', async (req, res) => {
     const { url } = req.body;
     if (!url) {
         return res.status(400).json({ error: 'IMDb URL må fylles ut.' });
     }
     try {
-        const title = await getImdbTitle(url);
-        if (!title) {
-            return res.status(400).json({ error: 'Kunne ikke hente tittel fra IMDb. Sjekk at lenken er gyldig.' });
+        const details = await getImdbDetails(url);
+        if (!details || !details.title) {
+            return res.status(400).json({ error: 'Kunne ikke hente film/serie fra IMDb. Sjekk at lenken er gyldig.' });
         }
         const result = await pool.query(
-            'INSERT INTO wishes (title, imdb_url) VALUES ($1, $2) RETURNING *',
-            [title, url]
+            'INSERT INTO wishes (title, imdb_url, rating) VALUES ($1, $2, $3) RETURNING *',
+            [details.title, url, details.rating]
         );
         res.json({ message: 'Lagt til i ønskeliste!', wish: result.rows[0] });
     } catch (err) {
         console.error('OMDB/DB feil (POST wishes):', err.message);
-        res.status(500).json({ error: 'Serverfeil ved henting av IMDb-tittel.' });
+        res.status(500).json({ error: 'Serverfeil ved henting av IMDb-detaljer.' });
     }
 });
 

@@ -27,8 +27,13 @@ async function initDb() {
             id        BIGSERIAL PRIMARY KEY,
             title     TEXT NOT NULL,
             imdb_url  TEXT NOT NULL,
+            rating    TEXT,
             created_at TIMESTAMPTZ DEFAULT NOW()
         );
+    `);
+    // Pass på at rating-kolonnen legges til hvis tabellen allerede finnes fra før
+    await pool.query(`
+        ALTER TABLE wishes ADD COLUMN IF NOT EXISTS rating TEXT;
     `);
     console.log('Database tables ready.');
 }

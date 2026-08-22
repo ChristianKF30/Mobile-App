@@ -318,14 +318,19 @@
                         container.innerHTML = '<li><span style="color:#94a3b8">Ingen filmer eller serier i ønskelisten ennå.</span></li>';
                         return;
                     }
-                    container.innerHTML = data.wishes.map(wish =>
-                        `<li style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-                            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                <a href="${wish.imdb_url}" target="_blank" style="color: #818cf8; font-weight: 600; text-decoration: none;">🎬 ${wish.title}</a>
+                    container.innerHTML = data.wishes.map(wish => {
+                        const ratingBadge = wish.rating 
+                            ? `<span style="background: rgba(245, 158, 11, 0.18); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35); font-weight: 700; font-size: 0.72rem; padding: 2px 6px; border-radius: 6px; white-space: nowrap; display: inline-flex; align-items: center; gap: 3px;">★ ${wish.rating}</span>`
+                            : '';
+                        return `
+                        <li style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                            <div style="display: flex; align-items: center; gap: 6px; overflow: hidden; min-width: 0;">
+                                <a href="${wish.imdb_url}" target="_blank" style="color: #818cf8; font-weight: 600; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">🎬 ${wish.title}</a>
+                                ${ratingBadge}
                             </div>
-                            <button onclick="deleteWish(${wish.id})" style="padding: 4px 8px; font-size: 0.75rem; background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4);">Slett</button>
-                        </li>`
-                    ).join('');
+                            <button onclick="deleteWish(${wish.id})" style="padding: 4px 8px; font-size: 0.75rem; background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 6px; cursor: pointer; flex-shrink: 0;">Slett</button>
+                        </li>`;
+                    }).join('');
                 }
             } catch (err) {
                 container.innerHTML = '<li><span style="color:#ef4444">Kunne ikke hente ønskeliste.</span></li>';
@@ -339,7 +344,7 @@
 
             if (!url) return;
             resBox.style.display = 'block';
-            resBox.innerText = 'Henter tittel fra IMDb via server...';
+            resBox.innerText = 'Henter tittel og vurdering fra IMDb via server...';
 
             try {
                 const res = await fetch(`${API_URL}/api/wishes`, {
@@ -351,7 +356,8 @@
 
                 if (res.ok) {
                     urlInput.value = '';
-                    resBox.innerText = `Lagt til: ${data.wish.title}`;
+                    const ratingText = data.wish.rating ? ` (★ ${data.wish.rating})` : '';
+                    resBox.innerText = `Lagt til: ${data.wish.title}${ratingText}`;
                     fetchWishes();
                 } else {
                     resBox.innerText = data.error || 'Kunne ikke legge til lenke.';
