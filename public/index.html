@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="no">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IMDB Ønskeliste</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="manifest" href="/manifest.json">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --phone-bg: #1e293b;
+            --phone-screen: #0f172a;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --card-bg: #1e293b;
+            --border: #334155;
+            --success: #10b981;
+            --error: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
+            /* Bruk vh for å låse høyden til skjermhøyden */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+            /* Fjerner scroll på selve nettsiden */
+        }
+
+        .header-title {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .header-title h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 6px;
+        }
+
+        .header-title p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .phone-frame {
+            width: 360px;
+            height: 720px;
+            /* Eller max-height: 90vh hvis den er for stor på små mobiler */
+            background-color: var(--phone-bg);
+            border: 12px solid #334155;
+            border-radius: 44px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            /* Viktig for å holde innholdet inne i rammen */
+        }
+
+        .phone-notch {
+            width: 130px;
+            height: 24px;
+            background: #334155;
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            border-bottom-left-radius: 14px;
+            border-bottom-right-radius: 14px;
+            z-index: 10;
+        }
+
+        .phone-screen {
+            flex: 1;
+            background-color: var(--phone-screen);
+            padding: 40px 20px 20px 20px;
+            overflow-y: auto;
+            /* Bare her skal scrollingen skje */
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+        }
+
+        .card h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 14px;
+            background: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--accent);
+        }
+
+        button {
+            padding: 12px 16px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: var(--accent-hover);
+        }
+
+        .response-box {
+            margin-top: 10px;
+            padding: 12px;
+            background: #0f172a;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            word-break: break-word;
+            border: 1px dashed var(--border);
+        }
+
+        .item-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .item-list li {
+            padding: 10px 12px;
+            background: #0f172a;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .home-indicator {
+            width: 120px;
+            height: 4px;
+            background: #475569;
+            border-radius: 2px;
+            margin: 8px auto 6px auto;
+        }
+    </style>
+</head>
+
+<body>
+
+
+
+    <div class="phone-frame">
+        <div class="phone-notch"></div>
+
+        <div class="phone-screen">
+
+            <!-- IMDb Ønskeliste -->
+            <div class="card">
+                <h2>🎬 IMDb Ønskeliste</h2>
+                <div class="input-group">
+                    <input type="text" id="wish-url"
+                        placeholder="Lim inn IMDb-lenke (f.eks. https://www.imdb.com/title/tt0111161/)...">
+                    <button onclick="addWish()">+ Legg til Film eller Serie</button>
+                </div>
+                <div id="wish-response" class="response-box" style="margin-bottom: 10px;">Lim inn IMDb-lenke for å hente
+                    tittel</div>
+                <ul id="wishes-container" class="item-list">
+                    <li><span>Laster IMDb-ønskeliste...</span></li>
+                </ul>
+            </div>
+
+            <!-- Kommentar Card -->
+            <div class="card">
+                <h2>💬 Kommentarer</h2>
+                <div class="input-group">
+                    <input type="text" id="note-title" placeholder="Tittel / Emne...">
+                    <input type="text" id="note-content" placeholder="Skriv din kommentar her...">
+                    <button onclick="addNote()">Lagre Kommentar</button>
+                </div>
+                <div id="note-response" class="response-box" style="margin-bottom: 10px; display: none;"></div>
+                <ul id="notes-container" class="item-list">
+                    <li><span>Laster kommentarer...</span></li>
+                </ul>
+            </div>
+
+        </div>
+
+        <div class="home-indicator"></div>
+    </div>
+
+    <script>
+        // Bruker samme server (relativ URL) når siden åpnes i nettleser/tunnel,
+        // eller Render-backend dersom siden åpnes som en frittstående statisk fil
+        const API_URL = (window.location.protocol.startsWith('http'))
+            ? ''
+            : 'https://videoforum-9fud.onrender.com';
+
+        async function fetchNotes() {
+            const container = document.getElementById('notes-container');
+            try {
+                const res = await fetch(`${API_URL}/api/notes`);
+                const data = await res.json();
+                if (data.notes) {
+                    if (data.notes.length === 0) {
+                        container.innerHTML = '<li><span style="color:#94a3b8">Ingen kommentarer ennå.</span></li>';
+                        return;
+                    }
+                    container.innerHTML = data.notes.map(note =>
+                        `<li style="flex-direction: column; align-items: flex-start; gap: 6px;">
+                            <div style="font-weight: 600; width: 100%; display: flex; justify-content: space-between; align-items: center;">
+                                <span>${note.title}</span>
+                                <button onclick="deleteNote(${note.id})" style="padding: 3px 8px; font-size: 0.75rem; background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4);">Slett</button>
+                            </div>
+                            <div style="color: #94a3b8; font-size: 0.85rem;">${note.content}</div>
+                        </li>`
+                    ).join('');
+                }
+            } catch (err) {
+                container.innerHTML = '<li><span style="color:#ef4444">Kunne ikke hente kommentarer.</span></li>';
+            }
+        }
+
+        async function deleteNote(id) {
+            try {
+                const res = await fetch(`${API_URL}/api/notes/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    fetchNotes();
+                }
+            } catch (err) {
+                alert('Kunne ikke slette kommentar');
+            }
+        }
+
+        async function addNote() {
+            const titleInput = document.getElementById('note-title');
+            const contentInput = document.getElementById('note-content');
+
+            const title = titleInput.value;
+            const content = contentInput.value;
+
+            if (!title || !content) return;
+
+            try {
+                const res = await fetch(`${API_URL}/api/notes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, content })
+                });
+                if (res.ok) {
+                    titleInput.value = '';
+                    contentInput.value = '';
+                    fetchNotes();
+                }
+            } catch (err) {
+                alert('Feil ved lagring av kommentar.');
+            }
+        }
+
+        async function fetchWishes() {
+            const container = document.getElementById('wishes-container');
+            try {
+                const res = await fetch(`${API_URL}/api/wishes`);
+                const data = await res.json();
+                if (data.wishes) {
+                    if (data.wishes.length === 0) {
+                        container.innerHTML = '<li><span style="color:#94a3b8">Ingen filmer eller serier i ønskelisten ennå.</span></li>';
+                        return;
+                    }
+                    container.innerHTML = data.wishes.map(wish =>
+                        `<li style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                <a href="${wish.imdb_url}" target="_blank" style="color: #818cf8; font-weight: 600; text-decoration: none;">🎬 ${wish.title}</a>
+                            </div>
+                            <button onclick="deleteWish(${wish.id})" style="padding: 4px 8px; font-size: 0.75rem; background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4);">Slett</button>
+                        </li>`
+                    ).join('');
+                }
+            } catch (err) {
+                container.innerHTML = '<li><span style="color:#ef4444">Kunne ikke hente ønskeliste.</span></li>';
+            }
+        }
+
+        async function addWish() {
+            const urlInput = document.getElementById('wish-url');
+            const resBox = document.getElementById('wish-response');
+            const url = urlInput.value;
+
+            if (!url) return;
+            resBox.style.display = 'block';
+            resBox.innerText = 'Henter tittel fra IMDb via server...';
+
+            try {
+                const res = await fetch(`${API_URL}/api/wishes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url }) // Sender bare URL, serveren ordner resten!
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    urlInput.value = '';
+                    resBox.innerText = `Lagt til: ${data.wish.title}`;
+                    fetchWishes();
+                } else {
+                    resBox.innerText = data.error || 'Kunne ikke legge til lenke.';
+                }
+            } catch (err) {
+                resBox.innerText = 'Feil ved tilkobling til server.';
+            }
+        }
+
+        async function deleteWish(id) {
+            try {
+                const res = await fetch(`${API_URL}/api/wishes/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    fetchWishes();
+                }
+            } catch (err) {
+                alert('Kunne ikke slette ønske');
+            }
+        }
+
+        // Kjør funksjonene ved oppstart
+        fetchNotes();
+        fetchWishes();
+    </script>
+</body>
+
+</html>
