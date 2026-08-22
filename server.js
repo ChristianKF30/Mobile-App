@@ -1,4 +1,8 @@
-require('dotenv').config();
+try {
+    require('dotenv').config();
+} catch (err) {
+    // I produksjon på Render håndteres miljøvariabler direkte av systemet
+}
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
